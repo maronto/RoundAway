@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RoundAway</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<!-- MODAL: no keys found -->
+<div id="modal-bg">
+  <div id="modal">
+    <h2><span>//</span> No Keys Found</h2>
+    <p>No RSA key pair was found in the <code>keys/</code> folder.<br>
+    Generate a new pair now? This takes a few seconds.</p>
+    <div class="mrow">
+      <button class="btn btn-g" onclick="dismissModal()">Later</button>
+      <button class="btn btn-p" onclick="modalGenerate()">Generate Keys</button>
+    </div>
+  </div>
+</div>
+
+<!-- TITLEBAR -->
+<div id="tb">
+  <div class="gem"></div>
+  <span class="tname">RoundAway</span>
+  <span class="tver">v1.0</span>
+  <div class="tsp"></div>
+  <div class="twc">
+    <button class="wb m" onclick="api.minimize()">-</button>
+    <button class="wb m" onclick="api.maximize()">+</button>
+    <button class="wb x" onclick="api.close()">x</button>
+  </div>
+</div>
+
+<div id="app">
+
+<!-- ════════ SIDEBAR ════════ -->
+<nav id="sb">
+
+  <div class="sg">Start</div>
+  <div class="ni on" data-pg="guide" onclick="nav(this)">
+    <span class="ico">/</span> Guide
+  </div>
+
+  <div class="ndiv"></div>
+
+  <div class="sg">File</div>
+  <div class="ni sub" data-pg="fenc" onclick="nav(this)">
+    <span class="ico">+</span> Encryption
+  </div>
+  <div class="ni sub" data-pg="fdec" onclick="nav(this)">
+    <span class="ico">-</span> Decryption
+  </div>
+
+  <div class="ndiv"></div>
+
+  <div class="sg">Text</div>
+  <div class="ni sub" data-pg="tenc" onclick="nav(this)">
+    <span class="ico">+</span> Encryption
+  </div>
+  <div class="ni sub" data-pg="tdec" onclick="nav(this)">
+    <span class="ico">-</span> Decryption
+  </div>
+
+  <div class="ndiv"></div>
+
+  <div class="sg">Keys</div>
+  <div class="ni" data-pg="keys" onclick="nav(this)">
+    <span class="ico">#</span> RSA Keys
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div class="ndiv" style="margin:0 0"></div>
+  <div class="ni" data-pg="about" onclick="nav(this)" style="padding:10px 13px">
+    <span class="ico">i</span> About
+  </div>
+
+  <div class="sfoot">
+    AES-256-GCM<br>
+    ChaCha20-Poly1305<br>
+    PBKDF2 · SHA-512<br>
+    RSA-4096
+  </div>
+</nav>
+
+<!-- ════════ CONTENT ════════ -->
+<main id="ct">
+
+  <!-- ── GUIDE ── -->
+  <div class="pg on" id="pg-guide">
+    <div class="ph">
+      <h1><em>//</em> Guide</h1>
+      <span class="sub">How to use RoundAway</span>
+    </div>
+    <div class="gg">
+      <div class="gb">
+        <h3>RSA Keys</h3>
+        <p>Your key pair lives in <code>keys/</code> in the project folder. Never share <code>private.pem</code>.</p>
+        <ul style="margin-top:6px">
+          <li>Drag & drop a <code>.pem</code> file onto a key panel</li>
+          <li>Or paste PEM text directly and save</li>
+          <li>On first launch you will be prompted to generate keys</li>
+        </ul>
+      </div>
+      <div class="gb">
+        <h3>File Encryption</h3>
+        <ol>
+          <li>Go to <strong style="color:var(--txt)">File > Encryption</strong></li>
+          <li>Drop any file onto the zone</li>
+          <li>Set a password and algorithm</li>
+          <li>Click Encrypt — saves as <code>.enc</code></li>
+        </ol>
+      </div>
+      <div class="gb">
+        <h3>File Decryption</h3>
+        <ol>
+          <li>Go to <strong style="color:var(--txt)">File > Decryption</strong></li>
+          <li>Drop the <code>.enc</code> file</li>
+          <li>Enter the password — algorithm auto-detected</li>
+          <li>Click Decrypt</li>
+        </ol>
+      </div>
+      <div class="gb">
+        <h3>Text Encryption</h3>
+        <ol>
+          <li>Go to <strong style="color:var(--txt)">Text > Encryption</strong></li>
+          <li>Enter password and choose algorithm</li>
+          <li>Paste plaintext and click Encrypt</li>
+          <li>Copy the Base64 output packet</li>
+        </ol>
+      </div>
+      <div class="gb">
+        <h3>Text Decryption</h3>
+        <ol>
+          <li>Go to <strong style="color:var(--txt)">Text > Decryption</strong></li>
+          <li>Paste the Base64 encrypted packet</li>
+          <li>Enter the same password and click Decrypt</li>
+        </ol>
+        <p style="margin-top:6px">Use <strong style="color:var(--txt)">Send to Decrypt</strong> on the Encryption page to transfer output automatically.</p>
+      </div>
+      <div class="gb">
+        <h3>Algorithms</h3>
+        <ul>
+          <li><code>AES-256-GCM</code> — recommended, authenticated</li>
+          <li><code>AES-192 / 128-GCM</code> — lighter GCM variants</li>
+          <li><code>AES-256 / 192 / 128-CBC</code> — classic, no auth</li>
+          <li><code>CAMELLIA-256</code> — ISO/IEC 18033 standard</li>
+          <li><code>ChaCha20-Poly1305</code> — TLS 1.3 stream cipher</li>
+        </ul>
+        <p style="margin-top:6px">All keys derived via <code>PBKDF2-SHA512</code>, 200k iterations, random salt.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FILE ENCRYPTION ── -->
+  <div class="pg" id="pg-fenc">
+    <div class="ph">
+      <h1><em>+</em> File Encryption</h1>
+      <span class="sub">Encrypt any file — saved as .enc</span>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="card">
+          <div class="ctitle">Input File</div>
+          <div class="fdz" id="fdz-e"
+               ondragover="fOv(event,'fdz-e')" ondragleave="fLv('fdz-e')"
+               ondrop="fDr(event,'fdz-e','fe-dn','fe-ip')">
+            <input type="file" onchange="fSl(this,'fdz-e','fe-dn','fe-ip')">
+            <span class="fic">[  ]</span>
+            <div class="fla">Drop file here</div>
+            <div class="fsb">or click to browse</div>
+            <div class="fname" id="fe-dn" style="display:none"></div>
+          </div>
+          <input type="hidden" id="fe-ip">
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="ctitle">Settings</div>
+          <div class="fr">
+            <label class="fl">Password</label>
+            <input type="password" id="fe-pw" placeholder="Enter password..." oninput="pwS('fe-pw','fe-pb')">
+            <div class="psw"><div class="psb" id="fe-pb"></div></div>
+          </div>
+          <div class="fr">
+            <label class="fl">Algorithm</label>
+            <select id="fe-al" onchange="alI('fe-al','fe-ai')">
+              <option value="AES-256-GCM">AES-256-GCM  (recommended)</option>
+              <option value="AES-192-GCM">AES-192-GCM</option>
+              <option value="AES-128-GCM">AES-128-GCM</option>
+              <option value="AES-256-CBC">AES-256-CBC</option>
+              <option value="AES-192-CBC">AES-192-CBC</option>
+              <option value="AES-128-CBC">AES-128-CBC</option>
+              <option value="CAMELLIA-256">CAMELLIA-256</option>
+              <option value="ChaCha20">ChaCha20-Poly1305</option>
+            </select>
+            <div class="ai" id="fe-ai"></div>
+          </div>
+          <button class="btn btn-p btn-full" onclick="encFile()">Encrypt File</button>
+        </div>
+      </div>
+    </div>
+    <div id="st-fe" class="st hide"></div>
+  </div>
+
+  <!-- ── FILE DECRYPTION ── -->
+  <div class="pg" id="pg-fdec">
+    <div class="ph">
+      <h1><em>-</em> File Decryption</h1>
+      <span class="sub">Algorithm auto-detected from .enc file</span>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="card">
+          <div class="ctitle">Encrypted File (.enc)</div>
+          <div class="fdz" id="fdz-d"
+               ondragover="fOv(event,'fdz-d')" ondragleave="fLv('fdz-d')"
+               ondrop="fDr(event,'fdz-d','fd-dn','fd-ip')">
+            <input type="file" onchange="fSl(this,'fdz-d','fd-dn','fd-ip')">
+            <span class="fic">[x]</span>
+            <div class="fla">Drop .enc file here</div>
+            <div class="fsb">or click to browse</div>
+            <div class="fname" id="fd-dn" style="display:none"></div>
+          </div>
+          <input type="hidden" id="fd-ip">
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="ctitle">Settings</div>
+          <div class="fr">
+            <label class="fl">Password</label>
+            <input type="password" id="fd-pw" placeholder="Password used during encryption...">
+          </div>
+          <div class="ai" style="border-left-color:var(--txt3);margin-bottom:12px">
+            Algorithm is stored inside the .enc file — no selection needed.
+          </div>
+          <button class="btn btn-p btn-full" onclick="decFile()">Decrypt File</button>
+        </div>
+      </div>
+    </div>
+    <div id="st-fd" class="st hide"></div>
+  </div>
+
+  <!-- ── TEXT ENCRYPTION ── -->
+  <div class="pg" id="pg-tenc">
+    <div class="ph">
+      <h1><em>+</em> Text Encryption</h1>
+      <span class="sub">Output is a self-contained Base64 packet</span>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="card">
+          <div class="ctitle">Plaintext Input</div>
+          <textarea id="te-in" rows="7" placeholder="Type or paste text to encrypt..."></textarea>
+          <div class="br">
+            <button class="btn btn-g" onclick="ps('te-in')">Paste</button>
+            <button class="btn btn-g" onclick="cl('te-in')">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="ctitle">Settings</div>
+          <div class="fr">
+            <label class="fl">Password</label>
+            <input type="password" id="te-pw" placeholder="Enter password..." oninput="pwS('te-pw','te-pb')">
+            <div class="psw"><div class="psb" id="te-pb"></div></div>
+          </div>
+          <div class="fr">
+            <label class="fl">Algorithm</label>
+            <select id="te-al" onchange="alI('te-al','te-ai')">
+              <option value="AES-256-GCM">AES-256-GCM  (recommended)</option>
+              <option value="AES-192-GCM">AES-192-GCM</option>
+              <option value="AES-128-GCM">AES-128-GCM</option>
+              <option value="AES-256-CBC">AES-256-CBC</option>
+              <option value="AES-192-CBC">AES-192-CBC</option>
+              <option value="AES-128-CBC">AES-128-CBC</option>
+              <option value="CAMELLIA-256">CAMELLIA-256</option>
+              <option value="ChaCha20">ChaCha20-Poly1305</option>
+            </select>
+            <div class="ai" id="te-ai"></div>
+          </div>
+          <button class="btn btn-p btn-full" onclick="encText()">Encrypt Text</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sep"><div class="sep-line"></div><div class="sep-tag">Output</div><div class="sep-line"></div></div>
+
+    <div class="card">
+      <div class="ctitle">Encrypted Packet</div>
+      <div class="out empty" id="te-out">No output yet</div>
+      <div class="br">
+        <button class="btn btn-g" onclick="cpO('te-out')">Copy</button>
+        <button class="btn btn-g" onclick="toDecTxt()">Send to Decryption</button>
+        <button class="btn btn-g" style="margin-left:auto" onclick="clrAll('te')">Clear All</button>
+      </div>
+    </div>
+    <div id="st-te" class="st hide"></div>
+  </div>
+
+  <!-- ── TEXT DECRYPTION ── -->
+  <div class="pg" id="pg-tdec">
+    <div class="ph">
+      <h1><em>-</em> Text Decryption</h1>
+      <span class="sub">Paste an encrypted Base64 packet</span>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="card">
+          <div class="ctitle">Encrypted Packet</div>
+          <textarea id="td-in" rows="7" placeholder="Paste Base64 encrypted packet here..."></textarea>
+          <div class="br">
+            <button class="btn btn-g" onclick="ps('td-in')">Paste</button>
+            <button class="btn btn-g" onclick="cl('td-in')">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="ctitle">Settings</div>
+          <div class="fr">
+            <label class="fl">Password</label>
+            <input type="password" id="td-pw" placeholder="Password used during encryption...">
+          </div>
+          <div class="ai" style="border-left-color:var(--txt3);margin-bottom:12px">
+            Algorithm is auto-detected from packet.
+          </div>
+          <button class="btn btn-p btn-full" onclick="decText()">Decrypt Text</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sep"><div class="sep-line"></div><div class="sep-tag">Result</div><div class="sep-line"></div></div>
+
+    <div class="card">
+      <div class="ctitle">Plaintext Result</div>
+      <div class="out empty" id="td-out">No output yet</div>
+      <div class="br">
+        <button class="btn btn-g" onclick="cpO('td-out')">Copy</button>
+        <button class="btn btn-g" style="margin-left:auto" onclick="clrAll('td')">Clear All</button>
+      </div>
+    </div>
+    <div id="st-td" class="st hide"></div>
+  </div>
+
+  <!-- ── RSA KEYS ── -->
+  <div class="pg" id="pg-keys">
+    <div class="ph">
+      <h1><em>#</em> RSA Keys</h1>
+      <span class="sub">Drag & drop .pem files or paste directly</span>
+    </div>
+
+    <div id="kp" class="pp" style="display:none">
+      <span class="ppl">Location</span>
+      <span class="ppv" id="kpv"></span>
+    </div>
+
+    <div class="br" style="margin-bottom:14px">
+      <button class="btn btn-p" onclick="genKeys()">Generate RSA-4096</button>
+      <button class="btn btn-g" onclick="loadKeys()">Reload from Disk</button>
+      <button class="btn btn-g" onclick="saveKeys()">Save to Disk</button>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div class="ctitle">Public Key</div>
+        <div class="kdz" id="kdz-pub"
+             ondragover="kOv(event,'kdz-pub')" ondragleave="kLv('kdz-pub')"
+             ondrop="kDr(event,'pub','kdz-pub')">
+          <textarea id="pub" placeholder="Paste or drop public.pem here..." oninput="kCh('pub','kd-pub')"></textarea>
+          <div class="dov"><div class="di">[ ]</div><div class="dl">Drop .pem</div></div>
+        </div>
+        <div class="krow">
+          <span class="kdot" id="kd-pub"></span>
+          <span class="klab">public.pem</span>
+          <button class="btn btn-g" style="padding:3px 8px;font-size:8.5px" onclick="cpK('pub')">Copy</button>
+          <button class="btn btn-g" style="padding:3px 8px;font-size:8.5px" onclick="clK('pub','kd-pub')">Clear</button>
+        </div>
+      </div>
+      <div>
+        <div class="ctitle danger">Private Key</div>
+        <div class="kdz" id="kdz-priv"
+             ondragover="kOv(event,'kdz-priv')" ondragleave="kLv('kdz-priv')"
+             ondrop="kDr(event,'priv','kdz-priv')">
+          <textarea id="priv" placeholder="Paste or drop private.pem here..." oninput="kCh('priv','kd-priv')"></textarea>
+          <div class="dov"><div class="di">[#]</div><div class="dl">Drop .pem</div></div>
+        </div>
+        <div class="krow">
+          <span class="kdot" id="kd-priv"></span>
+          <span class="klab" style="color:var(--red)">private.pem — never share</span>
+          <button class="btn btn-g" style="padding:3px 8px;font-size:8.5px" onclick="cpK('priv')">Copy</button>
+          <button class="btn btn-d" style="padding:3px 8px;font-size:8.5px" onclick="clK('priv','kd-priv')">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="st-keys" class="st hide"></div>
+  </div>
+
+  <!-- ── ABOUT ── -->
+  <div class="pg" id="pg-about">
+    <div class="ph">
+      <h1><em>i</em> About</h1>
+      <span class="sub">Project information</span>
+    </div>
+
+    <div class="about-card">
+      <div class="av">
+        <span class="av-init">/</span>
+      </div>
+      <div class="ainfo">
+        <h2>Maronth</h2> 
+        <div class="role">@maronto</div>
+        <p>The RoundAway project is designed to enable encryption via an external application instead of built-in encryption mechanisms, offering a higher level of privacy for personal messaging and data sharing.</p>
+      </div>
+    </div>
+
+    <div class="about-meta">
+      <table>
+        <tr><td>Project</td><td>RoundAway</td></tr>
+        <tr><td>Version</td><td>1.0.0</td></tr>
+        <tr><td>Stack</td><td>Electron + Node.js</td></tr>
+        <tr><td>Crypto</td><td>Node.js built-in crypto (OpenSSL)</td></tr>
+        <tr><td>Key Derivation</td><td>PBKDF2-SHA512 · 200,000 rounds</td></tr>
+        <tr><td>Key Storage</td><td>keys/ (project root)</td></tr>
+        <tr><td>License</td><td>MIT</td></tr>
+      </table>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  RoundAway — Renderer
+// ═══════════════════════════════════════════
+
+const ALGO_INFO = {
+  'AES-256-GCM':  '256-bit · GCM · authenticated · PBKDF2-SHA512',
+  'AES-192-GCM':  '192-bit · GCM · authenticated · PBKDF2-SHA512',
+  'AES-128-GCM':  '128-bit · GCM · authenticated · fast',
+  'AES-256-CBC':  '256-bit · CBC · classic · no auth tag',
+  'AES-192-CBC':  '192-bit · CBC',
+  'AES-128-CBC':  '128-bit · CBC · lightest',
+  'CAMELLIA-256': '256-bit · CBC · ISO/IEC 18033',
+  'ChaCha20':     '256-bit · stream · Poly1305 · TLS 1.3',
+};
+
+// ── Nav ──────────────────────────────────────
+function nav(el) {
+  document.querySelectorAll('.ni').forEach(i => i.classList.remove('on'));
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pg-' + el.dataset.pg).classList.add('on');
+}
+
+// ── Status ───────────────────────────────────
+function stat(id, msg, t) {
+  const el = document.getElementById(id);
+  el.className = 'st ' + t;
+  el.innerHTML = msg;
+  if (t === 'ok') setTimeout(() => el.classList.add('hide'), 4500);
+}
+function hst(id) { document.getElementById(id).className = 'st hide'; }
+
+// ── Algo info ─────────────────────────────────
+function alI(sel, out) {
+  document.getElementById(out).textContent = ALGO_INFO[document.getElementById(sel).value] || '';
+}
+
+// ── Password strength ─────────────────────────
+function pwS(inp, bar) {
+  const v = document.getElementById(inp).value;
+  const b = document.getElementById(bar);
+  let s = 0;
+  if (v.length >= 8)  s++;
+  if (v.length >= 14) s++;
+  if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+  if (/\d/.test(v)) s++;
+  if (/[^A-Za-z0-9]/.test(v)) s++;
+  const cols = ['#ff4444','#ff9900','#ffdd00','#7aff00','#c8ff00'];
+  const pcts = ['16%','32%','54%','76%','100%'];
+  b.style.width = v ? pcts[s-1]||'8%' : '0';
+  b.style.background = v ? cols[s-1]||'#ff4444' : '';
+}
+
+// ── Clipboard ─────────────────────────────────
+function cpO(id) {
+  const t = document.getElementById(id).textContent;
+  if (t && t !== 'No output yet') navigator.clipboard.writeText(t);
+}
+async function ps(id) {
+  try { document.getElementById(id).value = await navigator.clipboard.readText(); } catch(_) {}
+}
+function cl(id) { document.getElementById(id).value = ''; }
+function clrAll(p) {
+  document.querySelectorAll(`[id^="${p}-"]`).forEach(el => {
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') el.value = '';
+    if (el.classList.contains('out'))  { el.textContent = 'No output yet'; el.classList.add('empty'); }
+    if (el.classList.contains('psb')) el.style.width = '0';
+  });
+}
+
+// ── Modal ─────────────────────────────────────
+function showModal() {
+  const bg = document.getElementById('modal-bg');
+  bg.classList.add('show');
+  document.getElementById('modal').classList.add('show');
+}
+function dismissModal() {
+  document.getElementById('modal-bg').classList.remove('show');
+}
+async function modalGenerate() {
+  dismissModal();
+  // switch to keys page
+  document.querySelector('[data-pg="keys"]').click();
+  await genKeys();
+}
+
+// ── Keys ─────────────────────────────────────
+function kOv(e, id) { e.preventDefault(); document.getElementById(id).classList.add('over'); }
+function kLv(id)    { document.getElementById(id).classList.remove('over'); }
+function kDr(e, field, zone) {
+  e.preventDefault(); kLv(zone);
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById(field).value = ev.target.result;
+    kCh(field, 'kd-' + field);
+    stat('st-keys', 'Loaded from ' + f.name, 'ok');
+  };
+  r.readAsText(f);
+}
+function kCh(field, dot) {
+  const v = document.getElementById(field).value.trim();
+  document.getElementById(dot).classList.toggle('on', v.length > 10);
+}
+function cpK(id) {
+  const v = document.getElementById(id).value.trim();
+  if (v) navigator.clipboard.writeText(v);
+}
+function clK(id, dot) {
+  document.getElementById(id).value = '';
+  document.getElementById(dot).classList.remove('on');
+}
+
+async function genKeys() {
+  stat('st-keys', '<span class="spin"></span> Generating RSA-4096, please wait...', 'inf');
+  try {
+    const { privateKey, publicKey } = await api.generateKeys();
+    document.getElementById('pub').value  = publicKey;
+    document.getElementById('priv').value = privateKey;
+    document.getElementById('kd-pub').classList.add('on');
+    document.getElementById('kd-priv').classList.add('on');
+    await showKP();
+    stat('st-keys', 'RSA-4096 pair generated and saved to keys/', 'ok');
+  } catch(e) { stat('st-keys', e.message, 'err'); }
+}
+
+async function loadKeys() {
+  try {
+    const { privateKey, publicKey, keysDir } = await api.loadKeys();
+    if (publicKey)  { document.getElementById('pub').value  = publicKey;  document.getElementById('kd-pub').classList.add('on'); }
+    if (privateKey) { document.getElementById('priv').value = privateKey; document.getElementById('kd-priv').classList.add('on'); }
+    if (keysDir) { document.getElementById('kpv').textContent = keysDir; document.getElementById('kp').style.display='flex'; }
+    stat('st-keys', (!publicKey && !privateKey) ? 'No keys found. Generate a pair first.' : 'Keys loaded from disk', (!publicKey && !privateKey) ? 'inf' : 'ok');
+  } catch(e) { stat('st-keys', e.message, 'err'); }
+}
+
+async function showKP() {
+  try {
+    const { keysDir } = await api.loadKeys();
+    document.getElementById('kpv').textContent = keysDir;
+    document.getElementById('kp').style.display = 'flex';
+  } catch(_) {}
+}
+
+async function saveKeys() {
+  const priv = document.getElementById('priv').value.trim();
+  const pub  = document.getElementById('pub').value.trim();
+  if (!priv && !pub) { stat('st-keys', 'Nothing to save', 'err'); return; }
+  try { await api.saveKeys({ privateKey: priv, publicKey: pub }); stat('st-keys', 'Saved to keys/', 'ok'); }
+  catch(e) { stat('st-keys', e.message, 'err'); }
+}
+
+// ── Text Encrypt ──────────────────────────────
+async function encText() {
+  const txt = document.getElementById('te-in').value;
+  const pw  = document.getElementById('te-pw').value;
+  const alg = document.getElementById('te-al').value;
+  if (!txt) { stat('st-te', 'Enter text to encrypt', 'err'); return; }
+  if (!pw)  { stat('st-te', 'Enter a password', 'err'); return; }
+  stat('st-te', '<span class="spin"></span> Encrypting...', 'inf');
+  try {
+    const r = await api.encryptText({ text: txt, algorithm: alg, password: pw });
+    const pkt = btoa(JSON.stringify({ algo: alg, ...r }));
+    const out = document.getElementById('te-out');
+    out.textContent = pkt; out.classList.remove('empty');
+    stat('st-te', 'Encrypted with ' + alg, 'ok');
+  } catch(e) { stat('st-te', e.message, 'err'); }
+}
+
+function toDecTxt() {
+  const v = document.getElementById('te-out').textContent;
+  if (v && v !== 'No output yet') {
+    document.getElementById('td-in').value = v;
+    document.querySelector('[data-pg="tdec"]').click();
+  }
+}
+
+// ── Text Decrypt ──────────────────────────────
+async function decText() {
+  const pkt = document.getElementById('td-in').value.trim();
+  const pw  = document.getElementById('td-pw').value;
+  if (!pkt) { stat('st-td', 'Paste an encrypted packet', 'err'); return; }
+  if (!pw)  { stat('st-td', 'Enter the password', 'err'); return; }
+  stat('st-td', '<span class="spin"></span> Decrypting...', 'inf');
+  try {
+    const { algo, encrypted, iv, tag, salt } = JSON.parse(atob(pkt));
+    const result = await api.decryptText({ encrypted, algorithm: algo, password: pw, iv, tag, salt });
+    const out = document.getElementById('td-out');
+    out.textContent = result; out.classList.remove('empty');
+    stat('st-td', 'Decrypted successfully', 'ok');
+  } catch(e) { stat('st-td', 'Wrong password or corrupted packet', 'err'); }
+}
+
+// ── File helpers ──────────────────────────────
+function fOv(e, id) { e.preventDefault(); document.getElementById(id).classList.add('over'); }
+function fLv(id)    { document.getElementById(id).classList.remove('over'); }
+function fDr(e, zone, dn, ip) {
+  e.preventDefault(); fLv(zone);
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  setFP(f.path || f.name, dn, ip);
+}
+function fSl(input, zone, dn, ip) {
+  const f = input.files[0]; if (!f) return;
+  setFP(f.path || f.name, dn, ip);
+}
+function setFP(fp, dn, ip) {
+  const name = fp.split(/[/\\]/).pop();
+  const d = document.getElementById(dn);
+  d.textContent = name; d.style.display = 'inline-block';
+  document.getElementById(ip).value = fp;
+}
+
+async function encFile() {
+  const ip  = document.getElementById('fe-ip').value;
+  const pw  = document.getElementById('fe-pw').value;
+  const alg = document.getElementById('fe-al').value;
+  if (!ip) { stat('st-fe', 'Select a file first', 'err'); return; }
+  if (!pw) { stat('st-fe', 'Enter a password', 'err'); return; }
+  const op = await api.pickSaveFile(ip.split(/[/\\]/).pop() + '.enc');
+  if (!op) return;
+  stat('st-fe', '<span class="spin"></span> Encrypting...', 'inf');
+  try {
+    await api.encryptFile({ inputPath: ip, outputPath: op, algorithm: alg, password: pw });
+    stat('st-fe', 'Saved as ' + op.split(/[/\\]/).pop(), 'ok');
+  } catch(e) { stat('st-fe', e.message, 'err'); }
+}
+
+async function decFile() {
+  const ip = document.getElementById('fd-ip').value;
+  const pw = document.getElementById('fd-pw').value;
+  if (!ip) { stat('st-fd', 'Select a .enc file', 'err'); return; }
+  if (!pw) { stat('st-fd', 'Enter the password', 'err'); return; }
+  const def = ip.replace(/\.enc$/, '').split(/[/\\]/).pop() || 'decrypted';
+  const op  = await api.pickSaveFile(def);
+  if (!op) return;
+  stat('st-fd', '<span class="spin"></span> Decrypting...', 'inf');
+  try {
+    await api.decryptFile({ inputPath: ip, outputPath: op, password: pw });
+    stat('st-fd', 'Saved as ' + op.split(/[/\\]/).pop(), 'ok');
+  } catch(e) { stat('st-fd', 'Wrong password or corrupted file', 'err'); }
+}
+
+// ── Avatar image ──────────────────────────────
+function tryLoadAvatar() {
+  const img = new Image();
+  img.onload = () => {
+    const av = document.querySelector('.av');
+    av.innerHTML = '';
+    const el = document.createElement('img');
+    el.src = img.src;
+    av.appendChild(el);
+  };
+  img.src = 'avatar.png';
+}
+
+// ── Init ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // algo info init
+  ['te-al|te-ai','fe-al|fe-ai'].forEach(s => {
+    const [a, b] = s.split('|'); alI(a, b);
+  });
+
+  // load keys silently
+  await loadKeys();
+
+  // check if keys exist, prompt if not
+  try {
+    const has = await api.keysExist();
+    if (!has) showModal();
+  } catch(_) {}
+
+  // try avatar
+  tryLoadAvatar();
+});
+</script>
+</body>
+</html>

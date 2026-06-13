@@ -1,0 +1,45 @@
+{
+  "name": "roundaway",
+  "version": "1.0.0",
+  "description": "RoundAway — cryptographics tool",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable --x64",
+    "build:linux": "electron-builder --linux AppImage --x64"
+  },
+  "build": {
+    "appId": "com.roundaway.app",
+    "productName": "RoundAway",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "icon.png"
+    },
+    "portable": {
+      "requestExecutionLevel": "user"
+    },
+    "files": [
+      "src/**/*",
+      "icon.ico",
+      "icon.png"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
