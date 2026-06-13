@@ -17,7 +17,7 @@ RoundAway/
 │   └── style.css     # UI styling
 ├── icon.ico          # Application icon
 ├── package.json      # Project configuration and dependencies
-└── README.md         # Documentation
+└── readme.md         # Documentation
 
 ````
 
