@@ -37,8 +37,10 @@ npm start
 ## 🏗️ Build Instructions
 To create a production build:
 ```bash
-# Enter this in the terminal / PowerShell
-npm run build
+# Create a build for Windows
+npm run build:win
+# Create a build for Linux
+npm run build:linux 
 ```
 The final output will be generated in the `/dist` directory.
 ## 🔐 Encryption Algorithms & Methods
