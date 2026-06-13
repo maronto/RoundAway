@@ -1,7 +1,7 @@
 > [!NOTE]
 > When a file is encrypted locally—independent of servers and their processes—the responsibility for encryption lies solely with you. This project was created to provide a method of encryption that does not depend on corporations or the methods they use.
 
-# <img src="icon.png" width="28"> RoundAway
+# <img src="icon.ico" width="28"> RoundAway
 
 **RoundAway** is a portable cryptographic tool designed for secure and private communication. Built with **Electron** and **Node.js**, it provides encrypted messaging and file exchange capabilities in a lightweight desktop application.
 
